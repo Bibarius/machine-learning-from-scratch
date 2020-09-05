@@ -1,31 +1,18 @@
 from math import log2
 import numpy as np
 
-def entropy(data: list):
-    s = 0
-    for i in set(data):
-        Pi = data.count(i) / len(data)
-        s += Pi * log2(Pi)
 
-    return abs(-s)
-
-
-def gini_index(data: list):
-    s = 0
-    for i in set(data):
-        Pi = data.count(i) / len(data)
-        s += Pi ** 2
-
-    return 1 - s
 
 
 
 class Node():
 
-    def __init__(self, data: list):
+    def __init__(self, data: list, criterion):
         
         self.treshold = 0 
         self.entropy_sum = 1000
+
+        self.criterion = criterion
 
         """"break criterions"""
         if len(data) == 1 or data.count(data[0]) == len(data):
@@ -44,24 +31,38 @@ class Node():
             left_node = [data[i] for i in range(len(data)) if i <= f]
             right_node = [data[i] for i in range(len(data)) if i > f]
 
-            l_entropy = entropy(left_node)
-            r_entropy = entropy(right_node)
+            l_entropy = self.criterion(left_node)
+            r_entropy = self.criterion(right_node)
 
             if (l_entropy + r_entropy) <= self.entropy_sum:
                 self.entropy_sum = l_entropy + r_entropy
                 self.treshold = f
 
-        self.l_child = Node([data[i] for i in range(len(data)) if i <= self.treshold])
-        self.r_child = Node([data[i] for i in range(len(data)) if i > self.treshold])
+        self.l_child = Node([data[i] for i in range(len(data)) if i <= self.treshold], self.criterion)
+        self.r_child = Node([data[i] for i in range(len(data)) if i > self.treshold], self.criterion)
 
     def __to_terminal(self, data):
         self.label = max(set(data), key=data.count)
 
 
+    
+
+
 class Decisiontree():
 
+
+    def __init__(self, criterion='gini'):
+        if criterion != 'gini' and criterion != 'entropy':
+            print("Criterion error! Must be gini or entropy")
+        else:
+            self.criterion = criterion
+
     def fit(self, data: list):
-        self.tree = Node(data)
+
+        if self.criterion == 'gini':
+            self.tree = Node(data, self.__gini_index)
+        elif self.criterion == 'entropy':
+            self.tree = Node(data, self.__entropy)
 
 
     def predict(self, index):
@@ -81,6 +82,24 @@ class Decisiontree():
             else:
                 return self.__make_pred(tree.r_child, index)
 
+    @staticmethod
+    def __entropy(data: list):
+        s = 0
+        for i in set(data):
+            Pi = data.count(i) / len(data)
+            s += Pi * log2(Pi)
+
+        return abs(-s)
+
+    @staticmethod
+    def __gini_index(data: list):
+        s = 0
+        for i in set(data):
+            Pi = data.count(i) / len(data)
+            s += Pi ** 2
+
+        return 1 - s
+
 
         
          
@@ -93,7 +112,7 @@ data = [1, 1, 1, 1, 1, 0, 0, 0, 0, 0]
 
 classifier = Decisiontree()
 classifier.fit(data)
-print(classifier.predict(1))
+print(classifier.predict(8))
 
 
 
